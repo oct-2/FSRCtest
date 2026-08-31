@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>四季读书组 · 书单查询</title>
+    <title>四季读书组</title>
     <style>
         * {
             margin: 0;
@@ -78,6 +78,7 @@
             background: white;
             transition: all 0.2s ease;
             font-family: inherit;
+            min-width: 160px;
         }
 
         .input-group input:focus {
@@ -100,6 +101,7 @@
             cursor: pointer;
             transition: all 0.2s ease;
             font-family: inherit;
+            white-space: nowrap;
         }
 
         .btn-primary {
@@ -118,6 +120,15 @@
 
         .btn-secondary:hover {
             background: #e4e9ec;
+        }
+
+        .btn-accent {
+            background: #e8edf0;
+            color: #4a6a7a;
+        }
+
+        .btn-accent:hover {
+            background: #dce3e8;
         }
 
         .result-area {
@@ -154,6 +165,8 @@
             align-items: center;
             border: 1px solid #eef2f4;
             transition: all 0.2s;
+            flex-wrap: wrap;
+            gap: 6px;
         }
 
         .book-item:hover {
@@ -165,6 +178,14 @@
             font-size: 14px;
             color: #4a6272;
             font-weight: 450;
+        }
+
+        .book-author {
+            font-size: 13px;
+            color: #7b98aa;
+            background: #f0f4f6;
+            padding: 1px 12px;
+            border-radius: 20px;
         }
 
         .book-period {
@@ -229,13 +250,28 @@
             font-size: 0.8rem;
             font-weight: 450;
         }
+
+        /* 作者搜索结果高亮 */
+        .author-result-card {
+            background: #f0f7fa;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-top: 8px;
+            border-left: 4px solid #7ba5b8;
+        }
+
+        .author-name-highlight {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c5f7a;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>📚 书单查询系统</h1>
 
-        <!-- 按期数查找-->
+        <!-- 按期数查找 -->
         <div class="card">
             <h2>
                 <span>📖 查找往期书单</span>
@@ -252,13 +288,25 @@
 
         <!-- 按书名查找 -->
         <div class="card">
-            <h2>🔎 按书名查找是否在书单中</h2>
+            <h2>🔎 按书名查找</h2>
             <div class="input-group">
                 <input type="text" id="bookInput" placeholder="请输入书名" autocomplete="off">
                 <button class="btn btn-secondary" onclick="searchByBook()">🔍 查找</button>
             </div>
             <div id="bookResult" class="result-area">
                 <div class="empty-message">输入书名，点击查找</div>
+            </div>
+        </div>
+
+        <!-- 按作者查找 -->
+        <div class="card">
+            <h2>✍️ 按作者查找</h2>
+            <div class="input-group">
+                <input type="text" id="authorInput" placeholder="请输入作者姓名（支持模糊查找）" autocomplete="off">
+                <button class="btn btn-accent" onclick="searchByAuthor()">🔍 查找</button>
+            </div>
+            <div id="authorResult" class="result-area">
+                <div class="empty-message">输入作者姓名，点击查找</div>
             </div>
         </div>
 
@@ -289,7 +337,6 @@
                 try {
                     const utf8Decoder = new TextDecoder('utf-8');
                     csvText = utf8Decoder.decode(arrayBuffer);
-                    // 简单检测：如果中文字符很少或出现乱码，尝试 GBK
                     if (csvText.includes('�') || (csvText.match(/[一-龥]/g) || []).length < 5) {
                         const gbkDecoder = new TextDecoder('gbk');
                         csvText = gbkDecoder.decode(arrayBuffer);
@@ -299,21 +346,20 @@
                 }
 
                 parseCSV(csvText);
-                // 更新期数范围提示
                 updatePeriodRangeHint();
-                // 显示加载成功
                 showMessage('periodResult', 'info', '✅ 数据加载成功！可输入期数查询');
                 showMessage('bookResult', 'info', '✅ 数据加载成功！输入书名开始查询，不需要书名号，支持模糊查找。');
+                showMessage('authorResult', 'info', '✅ 数据加载成功！输入作者开始查询');
 
-                // 测试（控制台）
                 const testBook = bookData.find(b => b.name.includes('百年孤独'));
-                if (testBook) console.log(`✅ 测试通过："百年孤独" 在第 ${testBook.period} 期`);
-                else console.warn('⚠️ 未找到"百年孤独"，请检查 CSV 编码 (推荐 UTF-8)');
+                if (testBook) console.log(`✅ 测试通过："百年孤独" 在第 ${testBook.period} 期，作者：${testBook.author}`);
+                else console.warn('⚠️ 未找到"百年孤独"，请检查 CSV 编码');
 
             } catch (error) {
                 console.error('加载 CSV 失败:', error);
                 showMessage('periodResult', 'error', '❌ 无法加载 booklist.csv，请确保文件存在且编码为 UTF-8');
                 showMessage('bookResult', 'error', '❌ 数据加载失败');
+                showMessage('authorResult', 'error', '❌ 数据加载失败');
                 document.getElementById('rangeHint').textContent = '⚠️ 加载失败';
             }
         }
@@ -332,11 +378,11 @@
                 if (line === '') continue;
 
                 // 跳过标题行
-                if (i === 0 && (line.includes('期数') || line.includes('书名') || line.toLowerCase().includes('period'))) {
+                if (i === 0 && (line.includes('期数') || line.includes('书名') || line.includes('作者') ||
+                    line.toLowerCase().includes('period'))) {
                     continue;
                 }
 
-                // 手动解析 (处理引号内的逗号)
                 let parts = [];
                 let inQuotes = false;
                 let current = '';
@@ -353,20 +399,20 @@
                 }
                 parts.push(current.trim());
 
-                if (parts.length >= 2) {
+                if (parts.length >= 3) {
                     const period = parseInt(parts[0]);
-                    const bookName = parts.slice(1).join(',').trim().replace(/^"|"$/g, '');
+                    const bookName = parts[1].trim().replace(/^"|"$/g, '');
+                    const author = parts.slice(2).join(',').trim().replace(/^"|"$/g, '');
                     if (!isNaN(period) && bookName && bookName !== '') {
-                        bookData.push({ period, name: bookName });
+                        bookData.push({ period, name: bookName, author: author || '未知作者' });
                     }
                 }
             }
 
-            // 按期数排序
             bookData.sort((a, b) => a.period - b.period);
         }
 
-        // ---------- 更新期数范围提示 (动态) ----------
+        // ---------- 更新期数范围提示 ----------
         function updatePeriodRangeHint() {
             const hintEl = document.getElementById('rangeHint');
             if (!hintEl) return;
@@ -376,14 +422,12 @@
                 return;
             }
 
-            // 提取所有期数，去重排序
             const periods = [...new Set(bookData.map(b => b.period))].sort((a, b) => a - b);
             if (periods.length === 0) {
                 hintEl.textContent = '📭 无有效期数';
                 return;
             }
 
-            // 生成可读范围 (连续区间合并)
             const ranges = [];
             let start = periods[0];
             let end = periods[0];
@@ -400,7 +444,6 @@
 
             const hintText = `📚 可查期数: ${ranges.join('、')}`;
             hintEl.textContent = hintText;
-
         }
 
         // ---------- 按 期数 查找 ----------
@@ -447,7 +490,7 @@
             // 1. 精确匹配
             let found = bookData.find(book => book.name === query);
             if (found) {
-                showBookFoundResult(found, query, '精确匹配');
+                showBookFoundResult('bookResult', found, query, '精确匹配');
                 return;
             }
 
@@ -456,16 +499,16 @@
             const normQuery = normalize(query);
             found = bookData.find(book => normalize(book.name) === normQuery);
             if (found) {
-                showBookFoundResult(found, query, '忽略标点·空格');
+                showBookFoundResult('bookResult', found, query, '忽略标点·空格');
                 return;
             }
 
-            // 3. 包含匹配 (包含关系)
-            const similar = bookData.filter(book => 
+            // 3. 包含匹配
+            const similar = bookData.filter(book =>
                 book.name.includes(query) || query.includes(book.name)
             );
             if (similar.length === 1) {
-                showBookFoundResult(similar[0], query, '相似包含');
+                showBookFoundResult('bookResult', similar[0], query, '相似包含');
                 return;
             }
             if (similar.length > 1) {
@@ -473,7 +516,7 @@
                 return;
             }
 
-            // 4. 关键词拆分匹配
+            // 4. 关键词拆分
             const keywords = query.split(/[\s,，、]/).filter(k => k.length > 0);
             if (keywords.length > 1) {
                 const kwMatches = bookData.filter(book =>
@@ -485,20 +528,83 @@
                 }
             }
 
-            // 5. 未找到
             showMessage('bookResult', 'notfound', `❌ 未找到《${query}》，该书不在当前书单中`);
         }
 
+        // ---------- 按 作者 查找（新增） ----------
+        function searchByAuthor() {
+            const input = document.getElementById('authorInput');
+            let query = input.value.trim();
+            if (query === '') {
+                showMessage('authorResult', 'error', '⚠️ 请输入作者姓名');
+                return;
+            }
+            if (bookData.length === 0) {
+                showMessage('authorResult', 'error', '❌ 数据尚未加载');
+                return;
+            }
+
+            // 1. 精确匹配（作者全名）
+            let found = bookData.filter(book => book.author === query);
+            if (found.length > 0) {
+                displayBookList('authorResult', found, `✍️ 找到作者「${query}」的 ${found.length} 部作品`, true);
+                return;
+            }
+
+            // 2. 忽略标点、空格
+            const normalize = (str) => str.replace(/[，,、。！？；：""''《》【】（）\s·.-]/g, '');
+            const normQuery = normalize(query);
+            found = bookData.filter(book => normalize(book.author) === normQuery);
+            if (found.length > 0) {
+                displayBookList('authorResult', found, `✍️ 找到作者「${query}」的 ${found.length} 部作品（忽略标点）`, true);
+                return;
+            }
+
+            // 3. 包含匹配（作者名包含关键词）
+            found = bookData.filter(book => book.author.includes(query));
+            if (found.length > 0) {
+                displayBookList('authorResult', found, `✍️ 找到包含「${query}」的作者作品共 ${found.length} 部`, true);
+                return;
+            }
+
+            // 4. 关键词拆分匹配
+            const keywords = query.split(/[\s,，、]/).filter(k => k.length > 0);
+            if (keywords.length > 1) {
+                const kwMatches = bookData.filter(book =>
+                    keywords.some(kw => book.author.includes(kw))
+                );
+                if (kwMatches.length > 0) {
+                    displayBookList('authorResult', kwMatches, `✍️ 找到包含相关关键词的作者作品共 ${kwMatches.length} 部`, true);
+                    return;
+                }
+            }
+
+            // 5. 尝试姓氏匹配（对于外国作者常见）
+            const lastNameMatch = bookData.filter(book => {
+                const authorParts = book.author.split(/[\s·.-]/);
+                return authorParts.some(part => part.length > 1 && query.includes(part) || part.includes(query));
+            });
+            if (lastNameMatch.length > 0 && lastNameMatch.length < 30) {
+                displayBookList('authorResult', lastNameMatch, `✍️ 找到与「${query}」相关的作者作品共 ${lastNameMatch.length} 部`, true);
+                return;
+            }
+
+            showMessage('authorResult', 'notfound', `❌ 未找到作者「${query}」的作品，请检查姓名是否正确`);
+        }
+
         // ---------- 显示单本书结果 ----------
-        function showBookFoundResult(book, searchName, matchType) {
-            const container = document.getElementById('bookResult');
+        function showBookFoundResult(elementId, book, searchName, matchType) {
+            const container = document.getElementById(elementId);
             container.innerHTML = `
                 <div class="search-result">
                     <div class="found">✅ 找到书籍！</div>
                     <div style="margin-top: 20px; padding: 20px; background: #e6fffa; border-radius: 12px;">
                         <div style="font-size: 14px; color: #234e52; margin-bottom: 15px;">${matchType}</div>
-                        <div style="font-size: 18px; margin-bottom: 10px;">
+                        <div style="font-size: 18px; margin-bottom: 8px;">
                             📖 书名：<strong style="color: #2c7a7b;">《${escapeHtml(book.name)}》</strong>
+                        </div>
+                        <div style="font-size: 16px; margin-bottom: 8px; color: #4a6a7a;">
+                            ✍️ 作者：${escapeHtml(book.author)}
                         </div>
                         <div style="font-size: 18px;">
                             🔢 期数：<span style="font-size: 24px; font-weight: bold; color: #2c7a7b;">第 ${book.period} 期</span>
@@ -508,14 +614,15 @@
             `;
         }
 
-        // ---------- 显示书籍列表 (通用) ----------
-        function displayBookList(elementId, books, title) {
+        // ---------- 显示书籍列表 ----------
+        function displayBookList(elementId, books, title, showAuthorHeader = false) {
             const container = document.getElementById(elementId);
             let html = `<div class="result-stats">${title}</div><div class="book-list">`;
             books.forEach(book => {
                 html += `
                     <div class="book-item">
                         <span class="book-title">《${escapeHtml(book.name)}》</span>
+                        <span class="book-author">${escapeHtml(book.author)}</span>
                         <span class="book-period">第 ${book.period} 期</span>
                     </div>
                 `;
@@ -524,7 +631,7 @@
             container.innerHTML = html;
         }
 
-        // ---------- 显示消息 (info / error / notfound / similar) ----------
+        // ---------- 显示消息 ----------
         function showMessage(elementId, type, message, period = null, similarBooks = null) {
             const container = document.getElementById(elementId);
             if (!container) return;
@@ -536,6 +643,7 @@
                     html += `
                         <div class="book-item">
                             <span class="book-title">《${escapeHtml(book.name)}》</span>
+                            <span class="book-author">${escapeHtml(book.author)}</span>
                             <span class="book-period">第 ${book.period} 期</span>
                         </div>
                     `;
@@ -559,7 +667,7 @@
         function escapeHtml(str) {
             if (!str) return '';
             return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-                      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         }
 
         // ---------- 键盘事件 ----------
@@ -568,6 +676,9 @@
         });
         document.getElementById('bookInput').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') searchByBook();
+        });
+        document.getElementById('authorInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') searchByAuthor();
         });
     </script>
 </body>
