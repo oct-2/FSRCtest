@@ -254,7 +254,7 @@
         <div class="card">
             <h2>🔎 按书名查找是否在书单中</h2>
             <div class="input-group">
-                <input type="text" id="bookInput" placeholder="请输入书名 (不需要书名号，支持模糊查找)" autocomplete="off">
+                <input type="text" id="bookInput" placeholder="请输入书名" autocomplete="off">
                 <button class="btn btn-secondary" onclick="searchByBook()">🔍 查找</button>
             </div>
             <div id="bookResult" class="result-area">
@@ -303,7 +303,7 @@
                 updatePeriodRangeHint();
                 // 显示加载成功
                 showMessage('periodResult', 'info', '✅ 数据加载成功！可输入期数查询');
-                showMessage('bookResult', 'info', '✅ 数据加载成功！输入书名开始查询');
+                showMessage('bookResult', 'info', '✅ 数据加载成功！输入书名开始查询，不需要书名号，支持模糊查找。');
 
                 // 测试（控制台）
                 const testBook = bookData.find(b => b.name.includes('百年孤独'));
