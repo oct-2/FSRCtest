@@ -302,7 +302,7 @@
         <div class="card">
             <h2>✍️ 按作者查找</h2>
             <div class="input-group">
-                <input type="text" id="authorInput" placeholder="请输入作者姓名（支持模糊查找）" autocomplete="off">
+                <input type="text" id="authorInput" placeholder="请输入作者姓名" autocomplete="off">
                 <button class="btn btn-accent" onclick="searchByAuthor()">🔍 查找</button>
             </div>
             <div id="authorResult" class="result-area">
@@ -347,9 +347,9 @@
 
                 parseCSV(csvText);
                 updatePeriodRangeHint();
-                showMessage('periodResult', 'info', '✅ 数据加载成功！可输入期数查询');
+                showMessage('periodResult', 'info', '✅ 数据加载成功！可输入期数查询。');
                 showMessage('bookResult', 'info', '✅ 数据加载成功！输入书名开始查询，不需要书名号，支持模糊查找。');
-                showMessage('authorResult', 'info', '✅ 数据加载成功！输入作者开始查询');
+                showMessage('authorResult', 'info', '✅ 数据加载成功！输入作者开始查询，支持模糊查找。');
 
                 const testBook = bookData.find(b => b.name.includes('百年孤独'));
                 if (testBook) console.log(`✅ 测试通过："百年孤独" 在第 ${testBook.period} 期，作者：${testBook.author}`);
