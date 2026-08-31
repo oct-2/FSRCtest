@@ -235,7 +235,7 @@
     <div class="container">
         <h1>📚 书单查询系统</h1>
 
-        <!-- 按期数查找 (增强版：显示动态期数范围) -->
+        <!-- 按期数查找-->
         <div class="card">
             <h2>
                 <span>📖 查找往期书单</span>
@@ -263,7 +263,7 @@
         </div>
 
         <div class="footer">
-            <p>数据来源：booklist.csv · 修改 CSV 后刷新页面即可自动更新</p>
+            <p>数据来源：booklist.csv</p>
         </div>
     </div>
 
@@ -401,11 +401,6 @@
             const hintText = `📚 可查期数: ${ranges.join('、')}`;
             hintEl.textContent = hintText;
 
-            // 同时更新 input 的 placeholder
-            const input = document.getElementById('periodInput');
-            if (input) {
-                input.placeholder = `请输入期数 (${periods.join(', ')})`;
-            }
         }
 
         // ---------- 按 期数 查找 ----------
